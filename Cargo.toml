@@ -6,7 +6,6 @@ author = "bee0_0@icloud.com"
 readme = "README.md"
 description = "A simple k-v pair storage trait"
 repository = "https://github.com/ZBcheng/storage-trait"
-license = "MIT"
 license-file = "LICENSE"
 
 
