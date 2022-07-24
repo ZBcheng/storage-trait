@@ -66,10 +66,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_dashmap() {
+    fn test_contains() {
+        let storage = DashMapStorageBuilder::new().build();
+
+        let _ = storage
+            .set("name".to_string(), "Ferris".to_string())
+            .unwrap();
+        let _ = storage.contains("name".into()).unwrap();
+    }
+
+    #[test]
+    fn test_get() {
         let storage = DashMapStorageBuilder::new().capacity(10).build();
-        let _ = storage.set("name", "bee").unwrap();
-        let got = storage.get("name").unwrap();
-        assert_eq!(got, Some("bee"));
+
+        let (key, value) = ("name", false.to_string());
+        let _ = storage.set(key, value.clone());
+        let resp = storage.get(key).unwrap();
+        assert_eq!(resp, Some(value.clone()));
+
+        let _ = storage.del(key).unwrap();
+        let resp = storage.get(key).unwrap();
+        assert_eq!(resp, None);
     }
 }

@@ -142,10 +142,10 @@ mod tests {
     fn test_get() {
         let storage = build_localhost();
 
-        let (key, value) = ("name", false.to_string());
+        let (key, value) = ("name", "Ferris".to_string());
         let _ = storage.set(key, value.clone());
         let resp = storage.get(key).unwrap();
-        assert_eq!(resp, Some(value.clone()));
+        assert_eq!(resp, Some(value));
 
         let _ = storage.del(key).unwrap();
         let resp = storage.get(key).unwrap();
