@@ -34,16 +34,16 @@ pub struct DashMapStorageBuilder<K, V> {
 
 #[allow(unused)]
 impl<K: Hash + Eq, V: Clone> DashMapStorageBuilder<K, V> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         DashMapStorageBuilder::default()
     }
 
-    fn capacity(mut self, capacity: usize) -> Self {
+    pub fn capacity(mut self, capacity: usize) -> Self {
         self.capacity = Some(capacity);
         self
     }
 
-    fn build(self) -> DashMapStorage<K, V> {
+    pub fn build(self) -> DashMapStorage<K, V> {
         DashMapStorage {
             dash: self.capacity.map_or(DashMap::<K, V>::new(), |c| {
                 DashMap::<K, V>::with_capacity(c)
