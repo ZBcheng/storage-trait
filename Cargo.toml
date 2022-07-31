@@ -1,8 +1,7 @@
 [package]
 name = "storage-trait"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
-author = "bee0_0@icloud.com"
 readme = "README.md"
 description = "A simple k-v pair storage trait"
 repository = "https://github.com/ZBcheng/storage-trait"

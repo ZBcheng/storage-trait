@@ -2,6 +2,7 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 use dashmap::DashMap;
+use std::time::Duration;
 
 use crate::storage::{Err, Storage};
 
@@ -16,6 +17,10 @@ impl<K: Hash + Eq, V: Clone> Storage<K, V> for DashMapStorage<K, V> {
 
     fn set(&self, key: K, value: V) -> Result<(), Err> {
         Ok(self.dash.insert(key, value).map_or((), |_| ()))
+    }
+
+    fn set_ex(&self, _key: K, _value: V, _expire: Duration) -> Result<(), Err> {
+        unimplemented!()
     }
 
     fn del(&self, key: K) -> Result<Option<K>, Err> {

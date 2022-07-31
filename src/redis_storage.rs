@@ -1,6 +1,7 @@
 use std::{fmt::Display, marker::PhantomData};
 
 use redis::{Commands, FromRedisValue, RedisError, ToRedisArgs};
+use std::time::Duration;
 
 use crate::storage::{Err, Storage};
 
@@ -18,42 +19,61 @@ where
     V: Into<String> + FromRedisValue,
 {
     fn set(&self, key: K, value: V) -> Result<(), Err> {
-        let value: String = value.into();
-        match self.client.clone().set(&key, &value) {
-            Ok(()) => Ok(()),
+        match self.client.get_connection() {
+            Ok(mut conn) => conn
+                .set::<K, String, ()>(key, value.into())
+                .map_or_else(|e| Err(e.into()), |_| Ok(())),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    fn set_ex(&self, key: K, value: V, expire: Duration) -> Result<(), Err> {
+        match self.client.get_connection() {
+            Ok(mut conn) => conn
+                .set_ex::<K, String, ()>(key, value.into(), expire.as_secs() as usize)
+                .map_or_else(|e| Err(e.into()), |_| Ok(())),
             Err(e) => Err(e.into()),
         }
     }
 
     fn get(&self, key: K) -> Result<Option<V>, Err> {
-        match self.client.clone().get(&key) {
-            Ok(resp) => Ok(Some(resp)),
-            Err(e) => {
-                if caused_by_nil_response(&e) {
-                    return Ok(None);
-                }
-                Err(e.into())
-            }
+        match self.client.get_connection() {
+            Ok(mut conn) => conn.get(key).map_or_else(
+                |e| {
+                    if caused_by_nil_response(&e) {
+                        return Ok(None);
+                    } else {
+                        return Err(e.into());
+                    }
+                },
+                |resp: V| Ok(Some(resp)),
+            ),
+            Err(e) => Err(e.into()),
         }
     }
 
     fn del(&self, key: K) -> Result<Option<K>, Err> {
-        match self.client.clone().del(&key) {
-            Ok(()) => Ok(Some(key)),
+        match self.client.get_connection() {
+            Ok(mut conn) => conn
+                .del(&key)
+                .map_or_else(|e| Err(e.into()), |_: ()| Ok(Some(key))),
             Err(e) => Err(e.into()),
         }
     }
 
     fn contains(&self, key: K) -> Result<bool, Err> {
-        let resp: Result<V, RedisError> = self.client.clone().get(&key);
-        match resp {
-            Ok(_) => Ok(true),
-            Err(e) => {
-                if caused_by_nil_response(&e) {
-                    return Ok(false);
-                }
-                Err(e.into())
-            }
+        match self.client.get_connection() {
+            Ok(mut conn) => conn.get(key).map_or_else(
+                |e| {
+                    if caused_by_nil_response(&e) {
+                        return Ok(false);
+                    } else {
+                        return Err(e.into());
+                    }
+                },
+                |_: V| Ok(true),
+            ),
+            Err(e) => Err(e.into()),
         }
     }
 }
@@ -127,6 +147,7 @@ fn caused_by_nil_response(e: &RedisError) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     #[test]
     fn test_contains() {
@@ -148,6 +169,20 @@ mod tests {
         assert_eq!(resp, Some(value));
 
         let _ = storage.del(key).unwrap();
+        let resp = storage.get(key).unwrap();
+        assert_eq!(resp, None);
+    }
+
+    #[test]
+    fn test_set_ex() {
+        let storage = build_localhost();
+        let (key, value) = ("set_ex_test", "ok!".to_string());
+        let _ = storage
+            .set_ex(key, value.clone(), Duration::from_secs(3))
+            .unwrap();
+        let resp = storage.get(key).unwrap();
+        assert_eq!(resp, Some(value));
+        std::thread::sleep(std::time::Duration::from_secs(3));
         let resp = storage.get(key).unwrap();
         assert_eq!(resp, None);
     }
