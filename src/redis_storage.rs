@@ -78,13 +78,21 @@ where
     }
 }
 
-pub struct RedisStorageBuilder<K, V> {
+pub struct RedisStorageBuilder<K, V>
+where
+    K: ToRedisArgs,
+    V: Into<String>,
+{
     addr: Option<String>,
     _marker: PhantomData<(K, V)>,
 }
 
 #[allow(unused)]
-impl<K, V: Into<String>> RedisStorageBuilder<K, V> {
+impl<K, V> RedisStorageBuilder<K, V>
+where
+    K: ToRedisArgs,
+    V: Into<String>,
+{
     pub fn new() -> Self {
         RedisStorageBuilder::default()
     }
@@ -107,14 +115,37 @@ impl<K, V: Into<String>> RedisStorageBuilder<K, V> {
             || panic!("Empty url, use `config` or `url` method before building storage!"),
             |addr| addr,
         );
+
+        let mut client = redis::Client::open(addr).unwrap();
+        let _: () = client.set("ping".to_string(), "pong".to_string()).unwrap();
+
         RedisStorage {
-            client: redis::Client::open(addr).unwrap(),
+            client,
             _marker: self._marker,
         }
     }
+
+    pub fn try_build(self) -> Result<RedisStorage<K, V>, Err> {
+        let addr = self.addr.clone().map_or_else(
+            || Err("Empty url, use `config` or `url` method before building storage!"),
+            |addr| Ok(addr),
+        )?;
+
+        let mut client = redis::Client::open(addr)?;
+        let _: () = client.set("ping".to_string(), "pong".to_string())?;
+
+        Ok(RedisStorage {
+            client,
+            _marker: self._marker,
+        })
+    }
 }
 
-impl<K, V> Default for RedisStorageBuilder<K, V> {
+impl<K, V> Default for RedisStorageBuilder<K, V>
+where
+    K: ToRedisArgs,
+    V: Into<String>,
+{
     fn default() -> Self {
         Self {
             addr: None,
@@ -187,7 +218,23 @@ mod tests {
         assert_eq!(resp, None);
     }
 
-    fn build_localhost<K, V: Into<String>>() -> RedisStorage<K, V> {
+    #[test]
+    fn test_build() {
+        let _ = build_localhost::<String, String>();
+    }
+
+    #[test]
+    fn test_try_build() {
+        match RedisStorageBuilder::<String, String>::new()
+            .addr("redis://127.0.0.1:6379")
+            .try_build()
+        {
+            Ok(_) => println!("storage has been successfully built!"),
+            Err(e) => eprintln!("got an error: {:?}", e),
+        }
+    }
+
+    fn build_localhost<K: ToRedisArgs, V: Into<String>>() -> RedisStorage<K, V> {
         RedisStorageBuilder::<K, V>::new()
             .addr("redis://127.0.0.1:6379")
             .build()
