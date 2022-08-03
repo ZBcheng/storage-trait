@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use crate::storage::{Err, Storage};
 
+#[derive(Debug, Clone)]
 pub struct RedisStorage<K, V>
 where
     V: Into<String>,

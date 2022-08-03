@@ -10,3 +10,6 @@ Add examples and README.
 issue: https://github.com/ZBcheng/storage-trait/issues/1
 1. Check if connection is eatablished while building `RedisStorage`.
 2. Add method `try_build` to `RedisStorage`. Use `try_build` if you wanna get an Err resp or use `build` if you wanna panic immediately when error occurs.
+
+# v0.1.4
+1. impl `Debug` `Clone` for RedisStorage.

@@ -4,7 +4,7 @@ A simple k-v pair storage trait, including the implementation of dashmap and red
 Depending on this crate via cargo:
 ```rust
 [dependencies]
-storage-trait = "0.1.1"
+storage-trait = "0.1.4"
 ```
 
 ## Dashmap Support
