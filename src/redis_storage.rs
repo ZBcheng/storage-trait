@@ -1,6 +1,6 @@
 use std::{fmt::Display, marker::PhantomData};
 
-use redis::{Commands, FromRedisValue, RedisError, ToRedisArgs};
+use redis::{Commands, ConnectionLike, FromRedisValue, RedisError, ToRedisArgs};
 use std::time::Duration;
 
 use crate::storage::{Err, Storage};
@@ -118,7 +118,9 @@ where
         );
 
         let mut client = redis::Client::open(addr).unwrap();
-        let _: () = client.set("ping".to_string(), "pong".to_string()).unwrap();
+        if !client.check_connection() {
+            panic!("Connection ping failed...")
+        }
 
         RedisStorage {
             client,
@@ -133,7 +135,9 @@ where
         )?;
 
         let mut client = redis::Client::open(addr)?;
-        let _: () = client.set("ping".to_string(), "pong".to_string())?;
+        if !client.check_connection() {
+            return Err("Connection ping failed...".into());
+        }
 
         Ok(RedisStorage {
             client,
