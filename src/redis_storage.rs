@@ -233,7 +233,7 @@ mod tests {
     #[test]
     fn test_try_build() {
         match RedisStorageBuilder::<String, String>::new()
-            .addr("redis://127.0.0.1:637")
+            .addr("redis://127.0.0.1:6379")
             .try_build()
         {
             Ok(_) => println!("storage has been successfully built!"),
