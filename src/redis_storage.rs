@@ -118,8 +118,7 @@ where
         );
 
         let mut client = redis::Client::open(addr).unwrap();
-        let ping = client.check_connection();
-        if !ping {
+        if !client.check_connection() {
             panic!("Connection ping failed...")
         }
 
@@ -136,9 +135,8 @@ where
         )?;
 
         let mut client = redis::Client::open(addr)?;
-        let ping = client.check_connection();
-        if !ping {
-            panic!("Connection ping failed...")
+        if !client.check_connection() {
+            return Err("Connection ping failed...".into());
         }
 
         Ok(RedisStorage {
