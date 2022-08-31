@@ -1,6 +1,6 @@
 use std::{fmt::Display, marker::PhantomData};
 
-use redis::{Commands, FromRedisValue, RedisError, ToRedisArgs};
+use redis::{Commands, ConnectionLike, FromRedisValue, RedisError, ToRedisArgs};
 use std::time::Duration;
 
 use crate::storage::{Err, Storage};
@@ -118,7 +118,10 @@ where
         );
 
         let mut client = redis::Client::open(addr).unwrap();
-        let _: () = client.set("ping".to_string(), "pong".to_string()).unwrap();
+        let ping = client.check_connection();
+        if !ping {
+            panic!("Connection ping failed...")
+        }
 
         RedisStorage {
             client,
@@ -133,7 +136,10 @@ where
         )?;
 
         let mut client = redis::Client::open(addr)?;
-        let _: () = client.set("ping".to_string(), "pong".to_string())?;
+        let ping = client.check_connection();
+        if !ping {
+            panic!("Connection ping failed...")
+        }
 
         Ok(RedisStorage {
             client,
@@ -227,7 +233,7 @@ mod tests {
     #[test]
     fn test_try_build() {
         match RedisStorageBuilder::<String, String>::new()
-            .addr("redis://127.0.0.1:6379")
+            .addr("redis://127.0.0.1:637")
             .try_build()
         {
             Ok(_) => println!("storage has been successfully built!"),
